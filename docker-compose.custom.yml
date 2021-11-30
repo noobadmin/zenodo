@@ -1,0 +1,78 @@
+version: '2.1'
+services:
+  frontend:
+    extends:
+      file: docker-services.yml
+      service: frontend
+    links:
+      - web
+    volumes_from:
+      - static
+    ports:
+      - "8080:80"
+      - "8443:443"
+    restart: "unless-stopped"
+  web:
+    extends:
+      file: docker-services.yml
+      service: app
+    command: uwsgi /code/zenodo/docker/uwsgi/uwsgi.ini
+    links:
+      - cache
+      - es
+      - mq
+      - db
+    ports:
+      - "5000:5000"
+    volumes_from:
+      - static
+    restart: "unless-stopped"
+  worker:
+    extends:
+      file: docker-services.yml
+      service: app
+    restart: "unless-stopped"
+    command: "celery worker -A zenodo.celery --loglevel=INFO"
+    links:
+      - cache
+      - es
+      - mq
+      - db
+    volumes_from:
+      - static
+  static:
+    extends:
+      file: docker-services.yml
+      service: app
+    restart: "no"
+    command: tail -f /var/log/*
+    user: zenodo
+    volumes:
+      - "/usr/local/var/instance/static"
+      - "/usr/local/lib/python3.5/site-packages"
+      - "/usr/local/var/data"
+      - ".:/code/zenodo"
+  cache:
+    extends:
+      file: docker-services.yml
+      service: cache
+    restart: "unless-stopped"
+  db:
+    extends:
+      file: docker-services.yml
+      service: db
+    volumes:
+      - "./volumes/ps:/var/lib/postgresql/data"
+    restart: "unless-stopped"
+  mq:
+    extends:
+      file: docker-services.yml
+      service: mq
+    restart: "unless-stopped"
+  es:
+    extends:
+      file: docker-services.yml
+      service: es
+    volumes:
+      - "./volumes/es:/usr/share/elasticsearch/data"
+    restart: "unless-stopped"
