@@ -1,7 +1,7 @@
 #
 # Zenodo development docker build
 #
-FROM python:2.7
+FROM python:2.7.18-stretch
 MAINTAINER Zenodo <info@zenodo.org>
 
 ARG TERM=linux
